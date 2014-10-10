@@ -22,13 +22,12 @@ static char args_doc[] = "FILE";
 
 /* The options we understand. */
 static struct argp_option options[] = {
-  {"compress",  'c', 0,      0,  "Compress FILE or from STDIN(default)" },
+  {"compress",    'c', 0,      0,  "Compress FILE or from STDIN(default)" },
   {"decompress",  'd', 0,      0,  "Decompress FILE or from STDIN" },
-  {"verbose",  'v', 0,      0,  "Produce verbose output" },
+  {"verbose",     'v', 0,      0,  "Produce verbose output" },
   //  {"quiet",    'q', 0,      0,  "Don't produce any output" },
   //  {"silent",   's', 0,      OPTION_ALIAS },
-  {"output",   'o', "FILE", 0,
-   "Output to FILE instead of STDOUT" },
+  {"output",   'o', "FILE",    0, "Output to FILE instead of STDOUT" },
   { 0 }
 };
 
@@ -107,12 +106,7 @@ main (int argc, char **argv)
      be reflected in arguments. */
   argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
- 
-  
-  splitstream(arguments.args[0]);
-  
-  
-
+  //splitstream(arguments.args[0]);
 
   printf ("FILE = %s\nOUTPUT_FILE = %s\n"
           "VERBOSE = %s\nSILENT = %s\n",
