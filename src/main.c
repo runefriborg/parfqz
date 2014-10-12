@@ -7,6 +7,7 @@
 
 #include <stdlib.h>
 #include <argp.h>
+#include "splitstream.h"
 
 const char *argp_program_version =
   "parfqz 0.1";
@@ -106,8 +107,20 @@ main (int argc, char **argv)
      be reflected in arguments. */
   argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
-  //splitstream(arguments.args[0]);
+  {
 
+    splitstream_t * fp;
+    fp = splitstream_open(arguments.args[0]); // async , starts worker in background
+    chunk_t * c;
+    c = splitstream_next_chunk(fp);
+    while (c != NULL) {
+      // handle chunk
+
+      splitstream_free_chunk(c);
+    }
+    splitstream_close(fp);
+
+  }
   printf ("FILE = %s\nOUTPUT_FILE = %s\n"
           "VERBOSE = %s\nSILENT = %s\n",
           arguments.args[0],

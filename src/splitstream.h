@@ -32,7 +32,7 @@ typedef struct {
 } splitstream_t;
 
 
-struct chunk {
+typedef struct {
 	char chunk_id [COMPRESSION_CHUNK_SIZE];
 	char *chunk_id_content;
 
@@ -48,8 +48,12 @@ struct chunk {
 	// How many chunks there are in this chunk.
 	// COMPRESSION_CHUNK_SIZE or less.
 	int chunks;
-};
-
-typedef struct chunk chunk_t;
+} chunk_t;
 
 int begin_chunk_parsing(char *restrict filename, splitstream_t *t);
+
+// TODO
+splitstream_t * splitstream_open(char * filename);
+chunk_t * splitstream_next_chunk(splitstream_t * p);
+void splitstream_free_chunk(chunk_t * c);
+void splitstream_close(splitstream_t * p);
