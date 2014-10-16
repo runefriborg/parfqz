@@ -107,6 +107,32 @@ main (int argc, char **argv)
      be reflected in arguments. */
   argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
+  // example of pipeline execution
+
+  {
+    splitstream_t * pipe1;
+    pipe1 = splitstream_open(arguments.args[0]); // async , starts worker in background
+
+    splitchunk_t * pipe2;
+    pipe2 = splitchunk_open(pipe1); // async, start worker in background
+
+    sortsegments_t * pipe3;
+    pipe3 = sortsegments_open(pipe2); // async, start worker in background
+
+    transpose_t * pipe4;
+    pipe4 = transpose_open(pipe3);  // async, start worker in background    
+
+    compress_t * pipe5;
+    pipe5 = compress_open(pipe4); // async, start worker in background    
+
+    c = compress_next_chunk(pipe5);
+    while (c != NULL) {
+      // output chunk to stdout or file
+      compress_free_chunk(c);
+    }
+    compress_close(fp);
+
+  }
   {
 
     splitstream_t * fp;
