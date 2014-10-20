@@ -1,7 +1,7 @@
 CC=gcc
-CFLAGS=-c -Wall -Wextra -pedantic -std=c99
+CFLAGS=-c -Wall -Wextra -pedantic -std=c99 -g
 LDFLAGS= -lpthread
-SOURCES=main.c splitstream.c
+SOURCES=main.c splitstream.c pipe.c
 OBJECTS=$(SOURCES:.c=.o)
 EXECUTABLE=parfqz
 

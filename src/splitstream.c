@@ -11,6 +11,7 @@
 
 #include "main.h"
 #include "splitstream.h"
+#include "pipe.h"
 
 void *xrealloc(void *ptr, size_t s) {
 	void *m = realloc(ptr, s);
@@ -170,28 +171,12 @@ void *_chunk_async_worker(void *restrict arg) {
 	splitstream_t *t = (splitstream_t *)arg;
 	chunk_t *c = NULL;
 
-	(void)t;
-
 	while (1 == 1) {
 		// Read into chunk type.
 		c = _read_chunk(t);
-
-		// Lock the buffer
-		pthread_mutex_lock(&t->mutex);
-
-		// Wait for buffer to have space for chunk.
-		// TODO: We need to check that the buffer is not full here.
-		// while (buffer not full) {
-		pthread_cond_wait(&t->condp, &t->mutex);
-
-		// Add chunk into buffered chunk list.
-		// TODO: Implement buffered chunk list. Not done yet.
-
-		// Signal to optionally waiting reader that something was added to
-		//   queue.
-		pthread_cond_signal(&t->condc);	
-		pthread_mutex_unlock(&t->mutex);
+		pipe_put(&t->pipe, c);
 	}
+	pipe_put(&t->pipe, NULL);
 
 	return NULL;
 }
@@ -216,13 +201,31 @@ int begin_chunk_parsing(char *restrict filename, splitstream_t *t) {
 	t->input_size = INPUT_BUFFER_SIZE;
 	t->input      = xmalloc(INPUT_BUFFER_SIZE);
 
-	pthread_cond_init(&t->condc, NULL);
-	pthread_cond_init(&t->condp, NULL);
-	pthread_mutex_init(&t->mutex, NULL);
+	pipe_init(&t->pipe);
 	pthread_create(&t->worker, NULL, _chunk_async_worker, t);
 
 	return 1;
 }
 
-// TODO: We need a close splitstream_t function.
-// TODO: Add a close_chunk function.
+splitstream_t * splitstream_open(char * filename)
+{
+	splitstream_t *stream = calloc(1, sizeof(splitstream_t));
+	int ok = begin_chunk_parsing(filename, stream);
+	if (ok == 0) {
+		fprintf(stderr, "Opening '%s' failed\n", filename);
+		exit(1);
+	}
+	return stream;
+}
+void splitstream_close(splitstream_t *t)
+{
+	(void)t;
+}
+chunk_t * splitstream_next_chunk(splitstream_t *t)
+{
+	return pipe_get(&t->pipe);
+}
+void splitstream_free_chunk(chunk_t * c)
+{
+	(void)c;
+}
