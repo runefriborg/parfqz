@@ -130,7 +130,7 @@ main (int argc, char **argv)
       // output chunk to stdout or file
       compress_free_chunk(c);
     }
-    compress_close(fp);
+    compress_close(pipe5);
 
   }
 #endif
