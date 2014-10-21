@@ -76,7 +76,7 @@ parse_opt (int key, char *arg, struct argp_state *state)
       break;
 
     case ARGP_KEY_END:
-      if (state->arg_num < 0)
+      if (state->arg_num == 0)
         /* Not enough arguments. */
         argp_usage (state);
       break;
@@ -108,7 +108,7 @@ main (int argc, char **argv)
   argp_parse (&argp, argc, argv, 0, 0, &arguments);
 
   // example of pipeline execution
-
+#if 0
   {
     splitstream_t * pipe1;
     pipe1 = splitstream_open(arguments.args[0]); // async , starts worker in background
@@ -133,26 +133,39 @@ main (int argc, char **argv)
     compress_close(fp);
 
   }
+#endif
   {
 
     splitstream_t * fp;
     fp = splitstream_open(arguments.args[0]); // async , starts worker in background
-    chunk_t * c;
-    c = splitstream_next_chunk(fp);
-    while (c != NULL) {
-      // handle chunk
+    for (chunk_t *c = splitstream_next_chunk(fp); c != NULL; c = splitstream_next_chunk(fp))
+    {
+        // handle chunk
+        //printf("found a chunk with %d elems\n", c->chunks);
+        //printf("  and read_len = %d\n", c->read_len);
+        for (int i = 0; i < c->chunks; i++)
+        {
+            char *header = c->chunk_id_content + c->chunk_id[i];
+            char *plus = c->chunk_plus_content + c->chunk_plus[i];
+            printf("%s\n", header);
+            printf("%.*s\n", c->read_len, c->chunk_base + i*c->read_len);
+            printf("%s\n", plus);
+            printf("%.*s\n", c->read_len, c->chunk_qual + i*c->read_len);
+        }
 
-      splitstream_free_chunk(c);
+        splitstream_free_chunk(c);
+        c = splitstream_next_chunk(fp);
     }
     splitstream_close(fp);
-
   }
+#if 0
   printf ("FILE = %s\nOUTPUT_FILE = %s\n"
           "VERBOSE = %s\nSILENT = %s\n",
           arguments.args[0],
           arguments.output_file,
           arguments.verbose ? "yes" : "no",
           arguments.silent ? "yes" : "no");
+#endif
 
   exit (0);
 }

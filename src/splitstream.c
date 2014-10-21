@@ -41,8 +41,11 @@ inline int find_newline(char *s, int l) {
 	return i;
 }
 
-chunk_t *_read_chunk(splitstream_t *t) {
+chunk_t *_read_chunk(splitstream_t *t, int *done) {
+	if (*done)
+		return NULL;
 	chunk_t *c = xmalloc(sizeof(chunk_t));
+	c->read_len = 0;
 	int r
 		, i
 		, state = 0       // Which line in an input we are at.
@@ -52,6 +55,8 @@ chunk_t *_read_chunk(splitstream_t *t) {
 		, line_length = 0;
 
 	state_offset[0] = state_offset[1] = state_offset[2] = state_offset[3] = 0;
+
+	*done = 0;
 
 	// Allocate 2MiB for the variable input lines.
 	// Lines 2 and 4 have static length, and are allocated in the switch below.
@@ -79,19 +84,18 @@ chunk_t *_read_chunk(splitstream_t *t) {
 			 */
 			if (line_length + t->input_pointer >= t->input_length) {
 				// Read new data.
-
 				if (t->input_pointer < t->input_length) {
 					// Move existing data into beginning of input.
-					memcpy(t->input, &t->input[t->input_pointer], t->input_length - t->input_pointer);
+					memmove(t->input, t->input + t->input_pointer, line_length);
 
 					// Store the amount of data in the end of input.
-					t->input_pointer = t->input_length - t->input_pointer;
+					t->input_pointer = line_length;
 				}
 
 				// Read new data into the buffer.
-				r = fread(&t->input[t->input_pointer], 1, t->input_size - t->input_pointer, t->fd);
+				r = fread(t->input + t->input_pointer, 1, t->input_size - t->input_pointer, t->fd);
+				t->input_length = r + t->input_pointer;
 				t->input_pointer = 0;
-				t->input_length = r;
 
 				if (r == 0) { // EOF or input error.
 					// We skip the newline, so it isn't a problem here.
@@ -105,7 +109,7 @@ chunk_t *_read_chunk(splitstream_t *t) {
 				}
 			}
 			
-			if (t->input[line_length] == '\n') {
+			if (t->input[t->input_pointer + line_length] == '\n') {
 				break;
 			}
 
@@ -115,14 +119,15 @@ chunk_t *_read_chunk(splitstream_t *t) {
 		// Case 0-3 corresponds to line 1-4.
 		switch(state) {
 		case 0:
-			if(id_alloc <= state_offset[0] + line_length) {
+			if(id_alloc <= state_offset[0] + line_length + 1) {
 				c->chunk_id_content = xrealloc(c->chunk_id_content, 2*id_alloc);
 				id_alloc *= 2;
 			}
 
 			memcpy(&c->chunk_id_content[state_offset[0]], &t->input[t->input_pointer], line_length);
-			c->chunk_id[i/4] = line_length + 1; // line_length is 0 indexed.
-			state_offset[0] += line_length;
+			c->chunk_id_content[state_offset[0] + line_length] = '\0';
+			c->chunk_id[i/4] = state_offset[0];
+			state_offset[0] += line_length + 1;
 			break;
 		case 1:
 			if (c->read_len == 0) {
@@ -131,35 +136,37 @@ chunk_t *_read_chunk(splitstream_t *t) {
 				c->chunk_qual = xmalloc(line_length * COMPRESSION_CHUNK_SIZE);
 			}
 
-			memcpy(&c->chunk_base[state_offset[2]], &t->input[t->input_pointer], line_length);
+			memcpy(&c->chunk_base[state_offset[1]], &t->input[t->input_pointer], line_length);
 			state_offset[1] += line_length;
 			break;
 		case 2:
-			if(plus_alloc <= state_offset[2] + line_length) {
+			if(plus_alloc <= state_offset[2] + line_length + 1) {
 				c->chunk_plus_content = xrealloc(c->chunk_plus_content, 2*plus_alloc);
 				plus_alloc *= 2;
 			}
 
-			memcpy(&c->chunk_plus_content[state_offset[3]], &t->input[t->input_pointer], line_length);
-			c->chunk_plus[(i-2)/4] = line_length + 1; // line_length is 0 indexed.
-			state_offset[2] += line_length;
+			memcpy(&c->chunk_plus_content[state_offset[2]], &t->input[t->input_pointer], line_length + 1);
+			c->chunk_plus[(i-2)/4] = state_offset[2];
+			c->chunk_plus_content[state_offset[2] + line_length] = '\0';
+			state_offset[2] += line_length + 1;
 			break;
 		case 3:
-			memcpy(&c->chunk_qual[state_offset[2]], &t->input[t->input_pointer], line_length);
+			memcpy(&c->chunk_qual[state_offset[3]], &t->input[t->input_pointer], line_length);
 			state_offset[3] += line_length;
 			break;
 		}
 
 		// Advance past the newline.
-		t->input_pointer += line_length + 2;
+		t->input_pointer += line_length + 1;
 		state = (state + 1) % 4;
 	}
 
-	// If we ran into EOF, shrink allocations.
-	STOP: if (i != COMPRESSION_CHUNK_SIZE * 4) {
-		c->chunk_id_content = xrealloc(c->chunk_id_content, state_offset[0]);
-		c->chunk_plus_content = xrealloc(c->chunk_plus_content, state_offset[2]);
-		c->chunk_qual = xrealloc(c->chunk_qual, state_offset[1]);
+	STOP:
+	if (i < COMPRESSION_CHUNK_SIZE*4)
+		*done = 1;
+	if (i == 0) {
+		splitstream_free_chunk(c);
+		return NULL;
 	}
 
 	c->chunks = i/4;
@@ -170,10 +177,11 @@ chunk_t *_read_chunk(splitstream_t *t) {
 void *_chunk_async_worker(void *restrict arg) {
 	splitstream_t *t = (splitstream_t *)arg;
 	chunk_t *c = NULL;
+	int done = 0;
 
-	while (1 == 1) {
+	while (done == 0) {
 		// Read into chunk type.
-		c = _read_chunk(t);
+		c = _read_chunk(t, &done);
 		pipe_put(&t->pipe, c);
 	}
 	pipe_put(&t->pipe, NULL);
@@ -202,7 +210,10 @@ int begin_chunk_parsing(char *restrict filename, splitstream_t *t) {
 	t->input      = xmalloc(INPUT_BUFFER_SIZE);
 
 	pipe_init(&t->pipe);
-	pthread_create(&t->worker, NULL, _chunk_async_worker, t);
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+	pthread_create(&t->worker, &attr, _chunk_async_worker, t);
 
 	return 1;
 }
@@ -227,5 +238,9 @@ chunk_t * splitstream_next_chunk(splitstream_t *t)
 }
 void splitstream_free_chunk(chunk_t * c)
 {
-	(void)c;
+	free(c->chunk_base);
+	free(c->chunk_qual);
+	free(c->chunk_id_content);
+	free(c->chunk_plus_content);
+	free(c);
 }

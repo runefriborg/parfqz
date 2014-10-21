@@ -5,16 +5,16 @@
 #include "pipe.h"
 
 // Input buffer of 20MiB.
-static int INPUT_BUFFER_SIZE = 20*1024*1024;
+static int INPUT_BUFFER_SIZE = 1*1024;
 
 
 typedef struct {
-	char chunk_id [COMPRESSION_CHUNK_SIZE];
+	int chunk_id [COMPRESSION_CHUNK_SIZE];
 	char *chunk_id_content;
 
 	char *chunk_base;
 
-	char chunk_plus [COMPRESSION_CHUNK_SIZE];
+	int chunk_plus [COMPRESSION_CHUNK_SIZE];
 	char *chunk_plus_content;
 
 	char *chunk_qual;
