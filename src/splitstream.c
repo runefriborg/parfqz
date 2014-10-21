@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -41,79 +42,44 @@ inline int find_newline(char *s, int l) {
 	return i;
 }
 
+static int get_next_line(splitstream_t *t, char **start, int *len)
+{
+	static char *s = NULL;
+	static size_t s_size = 2000;
+	if (s == NULL)
+		s = calloc(s_size, 1);
+	ssize_t read = getline(&s, &s_size, t->fd);
+	if (read == -1)
+		return 1;
+	*start = s;
+	*len = read - 1;
+	return 0;
+}
+
 chunk_t *_read_chunk(splitstream_t *t, int *done) {
 	if (*done)
 		return NULL;
 	chunk_t *c = xmalloc(sizeof(chunk_t));
 	c->read_len = 0;
-	int r
-		, i
-		, state = 0       // Which line in an input we are at.
-		, state_offset[4] // Offset in alloc'd memory.
-		, id_alloc        // Alloc size.
-		, plus_alloc      // --||--
-		, line_length = 0;
-
-	state_offset[0] = state_offset[1] = state_offset[2] = state_offset[3] = 0;
-
-	*done = 0;
-
+	int i;
+	int state = 0;                     // Which line in an input we are at.
+	int state_offset[4] = {0};         // Offset in alloc'd memory.
 	// Allocate 2MiB for the variable input lines.
 	// Lines 2 and 4 have static length, and are allocated in the switch below.
-	id_alloc = 2097152;
-	plus_alloc = 2097152;
+	int id_alloc = 2*1024*1024;        // Alloc size.
+	int plus_alloc = 2*1024*1024;      // --||--
+	int line_length = 0;
+	*done = 0;
 
 	c->chunk_id_content = xmalloc(id_alloc);
 	c->chunk_plus_content = xmalloc(plus_alloc);
 
-
 	for (i = 0; i < COMPRESSION_CHUNK_SIZE*4; i++) {
-		line_length = 0;
-
-		// Find a complete line in the string.
-		while (1) {
-			/*
-			 * Invariants: the fastq format consists of four lines per entry.
-			 * When we are called we know that the we are starting with a
-			 * completely new enty, or with no entries left in the input
-			 * stream.
-			 *
-			 * Either t->input_pointer == t->input_end and no data is currently
-			 * in the buffer, or t->input_pointer < t->input_end, and this is
-			 * the data we have to begin with.
-			 */
-			if (line_length + t->input_pointer >= t->input_length) {
-				// Read new data.
-				if (t->input_pointer < t->input_length) {
-					// Move existing data into beginning of input.
-					memmove(t->input, t->input + t->input_pointer, line_length);
-
-					// Store the amount of data in the end of input.
-					t->input_pointer = line_length;
-				}
-
-				// Read new data into the buffer.
-				r = fread(t->input + t->input_pointer, 1, t->input_size - t->input_pointer, t->fd);
-				t->input_length = r + t->input_pointer;
-				t->input_pointer = 0;
-
-				if (r == 0) { // EOF or input error.
-					// We skip the newline, so it isn't a problem here.
-					if (line_length != 0) {
-						// This means the file didn't end with a newline.
-						// Hope that this is the case.
-						break;
-					} else {
-						goto STOP;
-					}
-				}
-			}
-			
-			if (t->input[t->input_pointer + line_length] == '\n') {
-				break;
-			}
-
-			line_length++;
+		char *line;
+		int is_done = get_next_line(t, &line, &line_length);
+		if (is_done) {
+		    *done = 1;
+		    break;
 		}
 
 		// Case 0-3 corresponds to line 1-4.
@@ -124,7 +90,7 @@ chunk_t *_read_chunk(splitstream_t *t, int *done) {
 				id_alloc *= 2;
 			}
 
-			memcpy(&c->chunk_id_content[state_offset[0]], &t->input[t->input_pointer], line_length);
+			memcpy(&c->chunk_id_content[state_offset[0]], line, line_length);
 			c->chunk_id_content[state_offset[0] + line_length] = '\0';
 			c->chunk_id[i/4] = state_offset[0];
 			state_offset[0] += line_length + 1;
@@ -136,7 +102,7 @@ chunk_t *_read_chunk(splitstream_t *t, int *done) {
 				c->chunk_qual = xmalloc(line_length * COMPRESSION_CHUNK_SIZE);
 			}
 
-			memcpy(&c->chunk_base[state_offset[1]], &t->input[t->input_pointer], line_length);
+			memcpy(&c->chunk_base[state_offset[1]], line, line_length);
 			state_offset[1] += line_length;
 			break;
 		case 2:
@@ -145,25 +111,21 @@ chunk_t *_read_chunk(splitstream_t *t, int *done) {
 				plus_alloc *= 2;
 			}
 
-			memcpy(&c->chunk_plus_content[state_offset[2]], &t->input[t->input_pointer], line_length + 1);
+			memcpy(&c->chunk_plus_content[state_offset[2]], line, line_length + 1);
 			c->chunk_plus[(i-2)/4] = state_offset[2];
 			c->chunk_plus_content[state_offset[2] + line_length] = '\0';
 			state_offset[2] += line_length + 1;
 			break;
 		case 3:
-			memcpy(&c->chunk_qual[state_offset[3]], &t->input[t->input_pointer], line_length);
+			memcpy(&c->chunk_qual[state_offset[3]], line, line_length);
 			state_offset[3] += line_length;
 			break;
 		}
 
 		// Advance past the newline.
-		t->input_pointer += line_length + 1;
 		state = (state + 1) % 4;
 	}
 
-	STOP:
-	if (i < COMPRESSION_CHUNK_SIZE*4)
-		*done = 1;
 	if (i == 0) {
 		splitstream_free_chunk(c);
 		return NULL;
@@ -203,12 +165,6 @@ int begin_chunk_parsing(char *restrict filename, splitstream_t *t) {
 			return 0;
 		}
 	}
-
-	t->input_length = t->input_pointer = 0;
-
-	t->input_size = INPUT_BUFFER_SIZE;
-	t->input      = xmalloc(INPUT_BUFFER_SIZE);
-
 	pipe_init(&t->pipe);
 	pthread_attr_t attr;
 	pthread_attr_init(&attr);

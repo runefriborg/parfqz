@@ -141,8 +141,6 @@ main (int argc, char **argv)
     for (chunk_t *c = splitstream_next_chunk(fp); c != NULL; c = splitstream_next_chunk(fp))
     {
         // handle chunk
-        //printf("found a chunk with %d elems\n", c->chunks);
-        //printf("  and read_len = %d\n", c->read_len);
         for (int i = 0; i < c->chunks; i++)
         {
             char *header = c->chunk_id_content + c->chunk_id[i];
@@ -154,7 +152,6 @@ main (int argc, char **argv)
         }
 
         splitstream_free_chunk(c);
-        c = splitstream_next_chunk(fp);
     }
     splitstream_close(fp);
   }

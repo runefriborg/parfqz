@@ -4,10 +4,6 @@
 #include "main.h"
 #include "pipe.h"
 
-// Input buffer of 20MiB.
-static int INPUT_BUFFER_SIZE = 1*1024;
-
-
 typedef struct {
 	int chunk_id [COMPRESSION_CHUNK_SIZE];
 	char *chunk_id_content;
@@ -34,21 +30,6 @@ typedef struct {
 
 	// Our buffer
 	pipe_t          pipe;
-
-	// Stores what is read from input.
-	char            *input;
-
-	// Size of allocated input.
-	int             input_size;
-
-	// This is where data read from fd begins. There is data from here until
-	// input_length.
-	int             input_pointer;
-
-	// Designates where input no longer contains valid data, in case of short
-	// read.
-	int             input_length;
-
 } splitstream_t;
 
 int begin_chunk_parsing(char *restrict filename, splitstream_t *t);
