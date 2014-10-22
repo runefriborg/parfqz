@@ -36,12 +36,6 @@ void *xmalloc(size_t s) {
 	return m;
 }
 
-inline int find_newline(char *s, int l) {
-	int i = 0;
-	while (i < l && s[i++] != '\n');
-	return i;
-}
-
 static int get_next_line(splitstream_t *t, char **start, int *len)
 {
 	static char *s = NULL;
@@ -186,7 +180,12 @@ splitstream_t * splitstream_open(char * filename)
 }
 void splitstream_close(splitstream_t *t)
 {
-	(void)t;
+	if (t->fd != NULL)
+	{
+	    fclose(t->fd);
+	    t->fd = NULL;
+	}
+	free(t);
 }
 chunk_t * splitstream_next_chunk(splitstream_t *t)
 {
