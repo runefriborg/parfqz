@@ -141,14 +141,14 @@ main (int argc, char **argv)
     for (chunk_t *c = splitstream_next_chunk(fp); c != NULL; c = splitstream_next_chunk(fp))
     {
         // handle chunk
-        for (int i = 0; i < c->chunks; i++)
+        for (int i = 0; i < c->read_count; i++)
         {
-            char *header = c->chunk_id_content + c->chunk_id[i];
-            char *plus = c->chunk_plus_content + c->chunk_plus[i];
+            char *header = c->read_id_content + c->read_id_offset[i];
+            char *plus = c->read_plus_content + c->read_plus_offset[i];
             printf("%s\n", header);
-            printf("%.*s\n", c->read_len, c->chunk_base + i*c->read_len);
+            printf("%.*s\n", c->read_len, c->read_base + i*c->read_len);
             printf("%s\n", plus);
-            printf("%.*s\n", c->read_len, c->chunk_qual + i*c->read_len);
+            printf("%.*s\n", c->read_len, c->read_qual + i*c->read_len);
         }
 
         splitstream_free_chunk(c);

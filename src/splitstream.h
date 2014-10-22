@@ -4,37 +4,39 @@
 #include "main.h"
 #include "pipe.h"
 
+
 typedef struct {
-	int chunk_id [COMPRESSION_CHUNK_SIZE];
-	char *chunk_id_content;
-
-	char *chunk_base;
-
-	int chunk_plus [COMPRESSION_CHUNK_SIZE];
-	char *chunk_plus_content;
-
-	char *chunk_qual;
-
-	int read_len;
-
-	// How many chunks there are in this chunk.
-	// COMPRESSION_CHUNK_SIZE or less.
-	int chunks;
+  // Chunk maintenaince variables
+  int order; // Used to handle out-of-order execution
+  int read_len;
+  int read_count; // number of reads in chunk
+  
+  // splitstream data  
+  int read_id_offset [COMPRESSION_CHUNK_SIZE];
+  char *read_id_content;                         // read_id_content+read_id_offset[offset]
+  char *read_base;                               // read_base+read_len*offset
+  int read_plus_offset [COMPRESSION_CHUNK_SIZE];
+  char *read_plus_content;                       // read_plus_content+read_plus_offset[offset]
+  char *read_qual;                               // read_qual+read_len*offset
+  
+  // splitchunk data
+  
 } chunk_t;
 
+
 typedef struct {
-	FILE *fd;
-
-	// The single worker process we have.
-	pthread_t       worker;
-
-	// Our buffer
-	pipe_t          pipe;
+  FILE *fd;
+  
+  // The single worker process we have.
+  pthread_t       worker;
+  
+  // Our buffer
+  pipe_t          pipe;
 } splitstream_t;
+
 
 int begin_chunk_parsing(char *restrict filename, splitstream_t *t);
 
-// TODO
 splitstream_t * splitstream_open(char * filename);
 chunk_t * splitstream_next_chunk(splitstream_t * p);
 void splitstream_free_chunk(chunk_t * c);
