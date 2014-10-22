@@ -1,3 +1,6 @@
+#ifndef _HEADER_SPLITSTREAM_H_
+#define _HEADER_SPLITSTREAM_H_
+
 #include <stdio.h>
 #include <pthread.h>
 
@@ -20,7 +23,11 @@ typedef struct {
   char *read_qual;                               // read_qual+read_len*offset
   
   // splitchunk data
-  
+  void * base_len_10;
+  //char *base_len_20;
+  //char *base_len_skew; // handle the possibly 0 to 9 bases in the end.
+  //int base_len_skew_len;
+
 } chunk_t;
 
 
@@ -41,3 +48,5 @@ splitstream_t * splitstream_open(char * filename);
 chunk_t * splitstream_next_chunk(splitstream_t * p);
 void splitstream_free_chunk(chunk_t * c);
 void splitstream_close(splitstream_t * p);
+
+#endif

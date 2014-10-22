@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <argp.h>
 #include "splitstream.h"
+#include "splitchunk.h"
 
 const char *argp_program_version =
   "parfqz 0.1";
@@ -136,9 +137,14 @@ main (int argc, char **argv)
 #endif
   {
 
-    splitstream_t * fp;
-    fp = splitstream_open(arguments.args[0]); // async , starts worker in background
-    for (chunk_t *c = splitstream_next_chunk(fp); c != NULL; c = splitstream_next_chunk(fp))
+    splitstream_t * pipe1;
+    pipe1 = splitstream_open(arguments.args[0]); // async , starts worker in background
+
+    splitchunk_t * pipe2;
+    pipe2 = splitchunk_open(pipe1); // async, start worker in background
+
+
+    for (chunk_t *c = splitchunk_next_chunk(pipe2); c != NULL; c = splitchunk_next_chunk(pipe2))
     {
         // handle chunk
         for (int i = 0; i < c->read_count; i++)
@@ -151,9 +157,10 @@ main (int argc, char **argv)
             printf("%.*s\n", c->read_len, c->read_qual + i*c->read_len);
         }
 
-        splitstream_free_chunk(c);
+        splitchunk_free_chunk(c);
     }
-    splitstream_close(fp);
+    splitchunk_close(pipe2);
+    splitstream_close(pipe1);
   }
 #if 0
   printf ("FILE = %s\nOUTPUT_FILE = %s\n"
