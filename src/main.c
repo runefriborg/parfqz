@@ -149,10 +149,10 @@ main (int argc, char **argv)
         {
             char *header = c->read_id_content + c->read_id_offset[i];
             char *plus = c->read_plus_content + c->read_plus_offset[i];
-            printf("%s\n", header);
-            printf("%.*s\n", c->read_len, c->read_base + i*c->read_len);
-            printf("%s\n", plus);
-            printf("%.*s\n", c->read_len, c->read_qual + i*c->read_len);
+            //printf("%s\n", header);
+            //printf("%.*s\n", c->read_len, c->read_base + i*c->read_len);
+            //printf("%s\n", plus);
+            //printf("%.*s\n", c->read_len, c->read_qual + i*c->read_len);
         }
 
         sortsegments_free_chunk(c);

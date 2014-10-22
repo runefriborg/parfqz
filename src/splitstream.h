@@ -23,7 +23,10 @@ typedef struct {
   char *read_qual;                               // read_qual+read_len*offset
   
   // splitchunk data
-  void * base_len_10;
+  char ** base_len_10;
+  int base_len_10_count;
+  char ** qual_len_10;
+  int qual_len_10_count;
   //char *base_len_20;
   //char *base_len_skew; // handle the possibly 0 to 9 bases in the end.
   //int base_len_skew_len;

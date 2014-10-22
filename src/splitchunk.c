@@ -2,13 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <errno.h>
 
 #include <pthread.h>
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 
 #include "main.h"
 #include "splitchunk.h"
@@ -16,7 +11,28 @@
 
 
 void _split(splitchunk_t *t, chunk_t *c) {
+  
+  c->base_len_10 = calloc(100000,sizeof(char *)); // Change to better size
+  c->qual_len_10 = calloc(100000,sizeof(char *)); // Change to better size
+  
+  int x = 0;
+  for (int i = 0; i < c->read_count; i++) {
+    for (int j = 0; j < 5; j+=10) {      
+      c->base_len_10[x] = (char *) (c->read_base + i*c->read_len + j);
+      c->qual_len_10[x] = (char *) (c->read_qual + i*c->read_len + j);
+				   
+      x++;
+    }
 
+  }
+  c->base_len_10_count = x;
+  c->qual_len_10_count = x;
+
+  /*
+  for (int i = 0; i < x; i++) {
+    printf("%.*s\n", 10, c->base_len_10[i]);
+  }
+  */
 }
 
 void *_splitchunk_async_worker(void *restrict arg) {
@@ -57,6 +73,8 @@ chunk_t * splitchunk_next_chunk(splitchunk_t *t) {
 
 
 void splitchunk_free_chunk(chunk_t * c) {
+  free(c->base_len_10);
+  free(c->qual_len_10);
   splitstream_free_chunk(c);
 }
 
