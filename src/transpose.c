@@ -40,6 +40,17 @@ void *_transpose_async_worker(void *restrict arg) {
         c->qual_len_10_permute,
         c->qual_len_10_count,
         10);
+
+    c->base_len_20_transposed = _do_transpose_stuff(
+        c->base_len_20,
+        c->base_len_20_permute,
+        c->base_len_20_count,
+        20);
+    c->qual_len_20_transposed = _do_transpose_stuff(
+        c->qual_len_20,
+        c->qual_len_20_permute,
+        c->qual_len_20_count,
+        20);
     pipe_put(&(t->pipe), c);
   }
   pipe_put(&(t->pipe), NULL);

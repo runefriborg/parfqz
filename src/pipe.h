@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 
-#define OUTPUT_BUFFER_SIZE 1024
+#define OUTPUT_BUFFER_SIZE 100
 
 typedef struct {
     pthread_mutex_t mutex;

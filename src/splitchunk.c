@@ -12,21 +12,21 @@
 
 void _split(splitchunk_t *t, chunk_t *c) {
   
-  c->base_len_10 = calloc(100000,sizeof(char *)); // Change to better size
-  c->qual_len_10 = calloc(100000,sizeof(char *)); // Change to better size
+  c->base_len_20 = calloc(200000,sizeof(char *)); // Change to better size
+  c->qual_len_20 = calloc(200000,sizeof(char *)); // Change to better size
   
   int x = 0;
   for (int i = 0; i < c->read_count; i++) {
     for (int j = 0; j < 5; j++) {      
-      c->base_len_10[x] = (char *) (c->read_base + i*c->read_len + j*10);
-      c->qual_len_10[x] = (char *) (c->read_qual + i*c->read_len + j*10);
+      c->base_len_20[x] = (char *) (c->read_base + i*c->read_len + j*20);
+      c->qual_len_20[x] = (char *) (c->read_qual + i*c->read_len + j*20);
 				   
       x++;
     }
 
   }
-  c->base_len_10_count = x;
-  c->qual_len_10_count = x;
+  c->base_len_20_count = x;
+  c->qual_len_20_count = x;
   
   /*
   for (int i = 0; i < x; i++) {
@@ -73,8 +73,8 @@ chunk_t * splitchunk_next_chunk(splitchunk_t *t) {
 
 
 void splitchunk_free_chunk(chunk_t * c) {
-  free(c->base_len_10);
-  free(c->qual_len_10);
+  free(c->base_len_20);
+  free(c->qual_len_20);
   splitstream_free_chunk(c);
 }
 

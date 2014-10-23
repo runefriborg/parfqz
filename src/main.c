@@ -144,6 +144,7 @@ main (int argc, char **argv)
     sortsegments_t * pipe3 = sortsegments_open(pipe2);
     transpose_t * pipe4 = transpose_open(pipe3);
 
+    int chunks_written = 0;
     for (chunk_t *c = transpose_next_chunk(pipe4); c != NULL; c = transpose_next_chunk(pipe4))
     {
         // handle chunk
@@ -155,6 +156,14 @@ main (int argc, char **argv)
             //printf("%.*s\n", c->read_len, c->read_base + i*c->read_len);
             //printf("%s\n", plus);
             //printf("%.*s\n", c->read_len, c->read_qual + i*c->read_len);
+        }
+
+        printf("%.*s\n", c->base_len_20_count*20, c->base_len_20_transposed);
+        //write(1, c->qual_len_20_permute, c->qual_len_20_count*sizeof(uint16_t));
+        chunks_written += 1;
+        if (chunks_written == 500)
+        {
+            exit(0);
         }
 
         transpose_free_chunk(c);

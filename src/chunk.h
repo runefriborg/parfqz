@@ -21,6 +21,11 @@ typedef struct {
   int base_len_10_count;
   char ** qual_len_10;
   int qual_len_10_count;
+
+  char ** base_len_20;
+  int base_len_20_count;
+  char ** qual_len_20;
+  int qual_len_20_count;
   //char *base_len_20;
   //char *base_len_skew; // handle the possibly 0 to 9 bases in the end.
   //int base_len_skew_len;
@@ -28,10 +33,14 @@ typedef struct {
   // sortsegments data
   uint16_t *base_len_10_permute;
   uint16_t *qual_len_10_permute;
+  uint16_t *base_len_20_permute;
+  uint16_t *qual_len_20_permute;
 
   // transpose data
   char *base_len_10_transposed;
   char *qual_len_10_transposed;
+  char *base_len_20_transposed;
+  char *qual_len_20_transposed;
 
 } chunk_t;
 

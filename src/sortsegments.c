@@ -15,6 +15,8 @@ void *_sortsegments_async_worker(void *restrict arg) {
   for (c = splitchunk_next_chunk(t->in); c != NULL; c = splitchunk_next_chunk(t->in)) {
     c->base_len_10_permute = make_permutation_table(c->base_len_10, c->base_len_10_count, 10);
     c->qual_len_10_permute = make_permutation_table(c->qual_len_10, c->qual_len_10_count, 10);
+    c->base_len_20_permute = make_permutation_table(c->base_len_20, c->base_len_20_count, 20);
+    c->qual_len_20_permute = make_permutation_table(c->qual_len_20, c->qual_len_20_count, 20);
     pipe_put(&(t->pipe), c);
   }
   pipe_put(&(t->pipe), NULL);
@@ -48,6 +50,10 @@ void sortsegments_free_chunk(chunk_t * c) {
   free(c->qual_len_10_permute);
   c->base_len_10_permute = NULL;
   c->qual_len_10_permute = NULL;
+  free(c->base_len_20_permute);
+  free(c->qual_len_20_permute);
+  c->base_len_20_permute = NULL;
+  c->qual_len_20_permute = NULL;
   splitchunk_free_chunk(c);
 }
 
