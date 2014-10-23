@@ -29,6 +29,10 @@ typedef struct {
   uint16_t *base_len_10_permute;
   uint16_t *qual_len_10_permute;
 
+  // transpose data
+  char *base_len_10_transposed;
+  char *qual_len_10_transposed;
+
 } chunk_t;
 
 
