@@ -28,8 +28,6 @@ void _split(splitchunk_t *t, chunk_t *c) {
   c->base_len_10_count = x;
   c->qual_len_10_count = x;
   
-  printf("%d\n", x*10);
-
   /*
   for (int i = 0; i < x; i++) {
     printf("%.*s\n", 10, c->base_len_10[i]);
