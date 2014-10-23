@@ -17,9 +17,9 @@ void _split(splitchunk_t *t, chunk_t *c) {
   
   int x = 0;
   for (int i = 0; i < c->read_count; i++) {
-    for (int j = 0; j < 5; j+=10) {      
-      c->base_len_10[x] = (char *) (c->read_base + i*c->read_len + j);
-      c->qual_len_10[x] = (char *) (c->read_qual + i*c->read_len + j);
+    for (int j = 0; j < 5; j++) {      
+      c->base_len_10[x] = (char *) (c->read_base + i*c->read_len + j*10);
+      c->qual_len_10[x] = (char *) (c->read_qual + i*c->read_len + j*10);
 				   
       x++;
     }
@@ -27,6 +27,8 @@ void _split(splitchunk_t *t, chunk_t *c) {
   }
   c->base_len_10_count = x;
   c->qual_len_10_count = x;
+  
+  printf("%d\n", x*10);
 
   /*
   for (int i = 0; i < x; i++) {
