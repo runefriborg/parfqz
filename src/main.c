@@ -8,6 +8,8 @@
 #include <stdlib.h>
 #include <argp.h>
 #include "splitstream.h"
+#include "splitchunk.h"
+#include "sortsegments.h"
 
 const char *argp_program_version =
   "parfqz 0.1";
@@ -136,27 +138,28 @@ main (int argc, char **argv)
 #endif
   {
 
-    splitstream_t * fp;
-    fp = splitstream_open(arguments.args[0]); // async , starts worker in background
-    for (chunk_t *c = splitstream_next_chunk(fp); c != NULL; c = splitstream_next_chunk(fp))
+    splitstream_t * pipe1 = splitstream_open(arguments.args[0]);
+    splitchunk_t * pipe2 = splitchunk_open(pipe1);
+    sortsegments_t * pipe3 = sortsegments_open(pipe2);
+
+    for (chunk_t *c = sortsegments_next_chunk(pipe3); c != NULL; c = sortsegments_next_chunk(pipe3))
     {
         // handle chunk
-        //printf("found a chunk with %d elems\n", c->chunks);
-        //printf("  and read_len = %d\n", c->read_len);
-        for (int i = 0; i < c->chunks; i++)
+        for (int i = 0; i < c->read_count; i++)
         {
-            char *header = c->chunk_id_content + c->chunk_id[i];
-            char *plus = c->chunk_plus_content + c->chunk_plus[i];
-            printf("%s\n", header);
-            printf("%.*s\n", c->read_len, c->chunk_base + i*c->read_len);
-            printf("%s\n", plus);
-            printf("%.*s\n", c->read_len, c->chunk_qual + i*c->read_len);
+            char *header = c->read_id_content + c->read_id_offset[i];
+            char *plus = c->read_plus_content + c->read_plus_offset[i];
+            //printf("%s\n", header);
+            //printf("%.*s\n", c->read_len, c->read_base + i*c->read_len);
+            //printf("%s\n", plus);
+            //printf("%.*s\n", c->read_len, c->read_qual + i*c->read_len);
         }
 
-        splitstream_free_chunk(c);
-        c = splitstream_next_chunk(fp);
+        sortsegments_free_chunk(c);
     }
-    splitstream_close(fp);
+    sortsegments_close(pipe3);
+    splitchunk_close(pipe2);
+    splitstream_close(pipe1);
   }
 #if 0
   printf ("FILE = %s\nOUTPUT_FILE = %s\n"
