@@ -1,5 +1,6 @@
 #ifndef _HEADER_CHUNK_H_
 #define _HEADER_CHUNK_H_
+#include <stdint.h>
 
 typedef struct {
   // Chunk maintenaince variables
@@ -23,6 +24,10 @@ typedef struct {
   //char *base_len_20;
   //char *base_len_skew; // handle the possibly 0 to 9 bases in the end.
   //int base_len_skew_len;
+
+  // sortsegments data
+  uint16_t *base_len_10_permute;
+  uint16_t *qual_len_10_permute;
 
 } chunk_t;
 

@@ -5,6 +5,7 @@
 #include "main.h"
 #include "sortsegments.h"
 #include "pipe.h"
+#include "permute.h"
 
 
 void *_sortsegments_async_worker(void *restrict arg) {
@@ -12,6 +13,8 @@ void *_sortsegments_async_worker(void *restrict arg) {
   chunk_t *c = NULL;
 
   for (c = splitchunk_next_chunk(t->in); c != NULL; c = splitchunk_next_chunk(t->in)) {
+    c->base_len_10_permute = make_permutation_table(c->base_len_10, c->base_len_10_count, 10);
+    c->qual_len_10_permute = make_permutation_table(c->qual_len_10, c->qual_len_10_count, 10);
     pipe_put(&(t->pipe), c);
   }
   pipe_put(&(t->pipe), NULL);
@@ -41,6 +44,10 @@ chunk_t * sortsegments_next_chunk(sortsegments_t *t) {
 }
 
 void sortsegments_free_chunk(chunk_t * c) {
+  free(c->base_len_10_permute);
+  free(c->qual_len_10_permute);
+  c->base_len_10_permute = NULL;
+  c->qual_len_10_permute = NULL;
   splitchunk_free_chunk(c);
 }
 
