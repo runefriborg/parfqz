@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <assert.h>
 
-static void _internal_simple_quick_sort(uint16_t *a, int n, const char **b, int bs)
+static void _internal_simple_quick_sort(uint16_t *a, int n, char **b, int bs)
 {
     if (n < 2)
         return;
@@ -34,7 +34,7 @@ static void _internal_simple_quick_sort(uint16_t *a, int n, const char **b, int 
  * Assumes 0 <= nblocks <= UINT16_MAX
  * The result is malloc'ed and must be freed by the caller.
  */
-uint16_t *make_permutation_table(const char **blocks, int nblocks, int elem_size)
+uint16_t *make_permutation_table(char **blocks, int nblocks, int elem_size)
 {
     assert(nblocks <= (1 << 16));
     int i;
@@ -56,7 +56,7 @@ uint16_t *make_permutation_table(const char **blocks, int nblocks, int elem_size
  * Assumes 0 <= nblocks <= UINT16_MAX
  * The result is malloc'ed and must be freed by the caller.
  */
-uint16_t *make_permutation_table_varlen(const char **blocks, int nblocks)
+uint16_t *make_permutation_table_varlen(char **blocks, int nblocks)
 {
     assert(nblocks <= (1 << 16));
     int i;
@@ -80,7 +80,7 @@ int main()
 {
     int N = (1 << 16);
     {
-        const char *test_blocks[] = {"DD", "BB", "CC", "AA"};
+        char *test_blocks[] = {"DD", "BB", "CC", "AA"};
         uint16_t *perm = make_permutation_table(test_blocks, 4, 2);
         int i = 0;
         for (i = 0; i < 4; i++)
@@ -88,7 +88,7 @@ int main()
         printf("\n");
     }
     {
-        const char **test_blocks = malloc(N*sizeof(char*));
+        char **test_blocks = malloc(N*sizeof(char*));
         int i;
         int nblocks = N;
         for (i = 0; i < nblocks; i++)
@@ -96,9 +96,9 @@ int main()
         test_blocks[0] = "CC";
         test_blocks[nblocks-1] = "AA";
         uint16_t *perm = make_permutation_table(test_blocks, nblocks, 2);
-        const char *last = test_blocks[perm[0] % nblocks];
+        char *last = test_blocks[perm[0] % nblocks];
         for (i = 1; i < nblocks; i++) {
-            const char *current = test_blocks[(perm[i] + i) % nblocks];
+            char *current = test_blocks[(perm[i] + i) % nblocks];
             if (strncmp(last, current, 2) > 0)
             {
                 printf("** ERROR **  not a proper sorting");

@@ -53,7 +53,7 @@ static int get_next_line(splitstream_t *t, char **start, int *len)
 chunk_t *_read_chunk(splitstream_t *t, int *done) {
   if (*done)
     return NULL;
-  chunk_t *c = xmalloc(sizeof(chunk_t));
+  chunk_t *c = calloc(1, sizeof(chunk_t));
   c->read_len = 0;
   int i;
   int state = 0;                     // Which line in an input we are at.

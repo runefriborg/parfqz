@@ -13,7 +13,7 @@
  *   perf_global_init();
  *   // Start threads
  *   // Stop threads
- *   perf_output_report(0, 0);
+ *   perf_output_report(0);
  *   perf_global_free();
  * 
  */ 
